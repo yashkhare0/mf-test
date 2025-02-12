@@ -1,1 +1,5 @@
 /.venv
+/logs
+/models
+/datasets
+/.linux_venv

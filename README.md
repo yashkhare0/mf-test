@@ -17,6 +17,12 @@ docker tag mf-test:latest 954976316440.dkr.ecr.ap-south-1.amazonaws.com/mf-test:
 docker push 954976316440.dkr.ecr.ap-south-1.amazonaws.com/mf-test:latest
 ```
 
+```bash
+python -m venv .venv --prompt mf-test
+source .venv/bin/activate
+pip install boto3
+```
+
 2. Launch the training:
 
 ```bash

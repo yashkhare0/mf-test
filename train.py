@@ -1,23 +1,18 @@
 import os
 import sys
 import subprocess
-import json
 import yaml
 import tarfile
 from sagemaker_training import environment
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
 import shutil
 import logging
-from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(f'/opt/ml/output/data/training_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
     ]
 )
 logger = logging.getLogger('training')
@@ -28,7 +23,6 @@ def extract_model(model_path, extract_path):
     try:
         with tarfile.open(model_path, 'r:gz') as tar:
             tar.extractall(path=extract_path)
-        
         extracted_dirs = os.listdir(extract_path)
         if len(extracted_dirs) == 1:
             final_path = os.path.join(extract_path, extracted_dirs[0])
@@ -82,7 +76,7 @@ def setup_data_directory():
 
 def train():
     logger.info("Starting training process")
-    env = environment.Environment()
+    # env = environment.Environment()
     
     # SageMaker specific directory structure
     model_dir = os.environ.get('SM_MODEL_DIR', '/opt/ml/model')
@@ -103,13 +97,11 @@ def train():
         model_path = os.environ.get('SM_CHANNEL_MODEL')
         if model_path:
             logger.info(f"Processing model from: {model_path}")
-            # Find the tar.gz file in the model directory
             model_files = [f for f in os.listdir(model_path) if f.endswith('.tar.gz')]
             if not model_files:
                 logger.error("No .tar.gz file found in model directory")
                 raise ValueError("No .tar.gz file found in model directory")
             
-            # Extract the model
             model_archive = os.path.join(model_path, model_files[0])
             local_model_path = '/opt/ml/code/models/Mistral-7B'
             os.makedirs(local_model_path, exist_ok=True)
