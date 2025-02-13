@@ -4,6 +4,7 @@ import logging
 import sys
 from datetime import datetime
 import boto3
+import botocore
 import time
 from sagemaker.local import LocalSession
 
@@ -64,7 +65,7 @@ try:
         image_uri='954976316440.dkr.ecr.ap-south-1.amazonaws.com/mf-test:latest',
         role='arn:aws:iam::954976316440:role/MistralFineTuneRole',
         instance_count=1,
-        instance_type= 'local_gpu', #'ml.c4.2xlarge',	#'ml.g4dn.2xlarge',#'ml.m5.xlarge', # 'local' for local testing # ml.g5.xlarge
+        instance_type= 'local_gpu', #'local_gpu', #'ml.c4.2xlarge',	#'ml.g4dn.2xlarge',#'ml.m5.xlarge', # 'local' for local testing # ml.g5.xlarge
         output_path='s3://sagemaker-ap-south-1-954976316440/sagemaker/output',
         volume_size=100,
         max_run=24*60*60,
@@ -72,21 +73,47 @@ try:
             'WANDB_PROJECT': 'mf-test',
             'WANDB_MODE': 'online'
         },
-        # sagemaker_session = local_session
         entry_point='train.py',
         source_dir='.'
     )
     logger.info(f"Estimator created with output path: {estimator.output_path}")
 
     data_channels = {
-        'train': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/training',
-        'test': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/evaluation',
+        'train': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/training/train.jsonl',
+        'test': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/evaluation/eval.jsonl',
         'model': 's3://sagemaker-ap-south-1-954976316440/sagemaker/models/mistral-7b-v0.3/model.tar.gz'
     }
 
     logger.info("Data channels configured:")
     for channel, path in data_channels.items():
         logger.info(f"  {channel}: {path}")
+
+    s3 = boto3.client('s3')
+    try:
+        for channel_name, s3_uri in data_channels.items():
+            if not s3_uri.startswith('s3://'):
+                continue
+            bucket = s3_uri.split('/')[2]
+            key = '/'.join(s3_uri.split('/')[3:])
+            logger.info(f"Checking {channel_name} at s3://{bucket}/{key}")
+            try:
+                response = s3.head_object(Bucket=bucket, Key=key)
+                logger.info(f"Successfully verified {channel_name} exists at s3://{bucket}/{key}")
+                logger.info(f"File size: {response['ContentLength']} bytes")
+            except botocore.exceptions.ClientError as e:
+                error_code = e.response['Error']['Code']
+                if error_code == "404":
+                    logger.error(f"{channel_name} file not found at s3://{bucket}/{key}")
+                    raise
+                elif error_code == "403":
+                    logger.error(f"Unauthorized access to {channel_name} at s3://{bucket}/{key}. Please check credentials and bucket permissions.")
+                    raise
+                else:
+                    logger.error(f"Error accessing {channel_name} at s3://{bucket}/{key}: {str(e)}")
+                    raise
+    except Exception as e:
+        logger.error(f"Error checking S3 files: {str(e)}")
+        raise
 
     logger.info("Starting training job...")
     
@@ -111,7 +138,6 @@ try:
             status = new_status
             logger.info(f"Training job status: {status}")
             
-            # Log metrics to CloudWatch
             if 'ResourceConfig' in description:
                 cloudwatch_callback.put_metric(
                     'InstanceCount',
