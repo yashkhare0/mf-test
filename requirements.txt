@@ -12,3 +12,4 @@ xformers==0.0.24
 boto3
 sagemaker[local]
 sagemaker-training
+wandb

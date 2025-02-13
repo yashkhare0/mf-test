@@ -1,14 +1,13 @@
 data:
-  instruct_data: "/opt/ml/code/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/train.jsonl"
-  eval_instruct_data: "/opt/ml/code/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/eval.jsonl"
+  instruct_data: "/opt/ml/input/data/train"
+  eval_instruct_data: "/opt/ml/input/data/test"
   data: ""
 
-model_id_or_path: "mistralai/Mistral-7B-v0.3"  # This will be overridden if model is provided in SM_CHANNEL_MODEL
+model_id_or_path: "/opt/ml/input/data/model"
 
 lora:
   rank: 8
 
-# optim
 seq_len: 128
 batch_size: 4
 max_steps: 1000
@@ -17,7 +16,6 @@ optim:
   weight_decay: 0.1
   pct_start: 0.05
 
-# other
 seed: 0
 log_freq: 1
 eval_freq: 100
@@ -32,3 +30,4 @@ wandb:
   project: "mistral-7b-test"
   run_name: "mistral-7b-sagemaker"
   offline: True
+  key: "106e694fa8054eab04e2ee0f788fc56c3b65a522"
