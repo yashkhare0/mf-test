@@ -1,0 +1,4 @@
+train: "s3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test-data/training/train.jsonl"
+test: "s3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test-data/evaluation/eval.jsonl"
+model: "s3://sagemaker-ap-south-1-954976316440/sagemaker/models/mistral-7b-v0.3/model.tar.gz"
+# pretrain_data: None

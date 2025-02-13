@@ -49,3 +49,9 @@ repository : {
     }
 }
 ```
+
+### Install sagemaker from the given repo[https://github.com/yashkhare0/sagemaker-python-sdk-estimator-fix/]
+
+```bash
+pip install git+https://github.com/yashkhare0/sagemaker-python-sdk-estimator-fix.git
+```

@@ -98,9 +98,6 @@ def create_estimator(instance_type:str='local_gpu', session:Union[sagemaker.Sess
                 'WANDB_PROJECT': 'mf-test',
                 'WANDB_MODE': 'online'
             },
-            # entry_point='train.py',
-            # source_dir='.',
-            # sagemaker_session=session
         )
         logger.info("Estimator created successfully")
         return estimator

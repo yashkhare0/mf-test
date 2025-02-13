@@ -27,7 +27,7 @@ save_adapters: True
 run_dir: "/opt/ml/model"
 
 wandb:
-  project: "mistral-7b-test"
+  project: None
   run_name: "mistral-7b-sagemaker"
   offline: True
   key: "106e694fa8054eab04e2ee0f788fc56c3b65a522"
