@@ -10,7 +10,7 @@ aws ecr create-repository --repository-name mf-test --region ap-south-1
 docker build -t mf-test .
 
 # Login to ECR
-aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 954976316440.dkr.ecr.ap-south-1.amazonaws.com
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 763104351884.dkr.ecr.ap-south-1.amazonaws.com
 
 # Tag and push
 docker tag mf-test:latest 954976316440.dkr.ecr.ap-south-1.amazonaws.com/mf-test:latest
@@ -23,7 +23,7 @@ source .venv/bin/activate
 pip install boto3
 ```
 
-2. Launch the training:
+1. Launch the training:
 
 ```bash
 python launch_training.py

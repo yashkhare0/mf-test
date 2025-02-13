@@ -60,10 +60,11 @@ try:
     logger.info("Creating SageMaker estimator...")
     
     estimator = Estimator(
+        base_job_name='mf-test-job',
         image_uri='954976316440.dkr.ecr.ap-south-1.amazonaws.com/mf-test:latest',
         role='arn:aws:iam::954976316440:role/MistralFineTuneRole',
         instance_count=1,
-        instance_type= 'ml.m5.xlarge',#'ml.m5.xlarge', # 'local' for local testing # ml.g5.xlarge
+        instance_type= 'local_gpu', #'ml.c4.2xlarge',	#'ml.g4dn.2xlarge',#'ml.m5.xlarge', # 'local' for local testing # ml.g5.xlarge
         output_path='s3://sagemaker-ap-south-1-954976316440/sagemaker/output',
         volume_size=100,
         max_run=24*60*60,
@@ -72,15 +73,14 @@ try:
             'WANDB_MODE': 'online'
         },
         # sagemaker_session = local_session
-
-        # entry_point='train.py',
-        # source_dir='.'
+        entry_point='train.py',
+        source_dir='.'
     )
     logger.info(f"Estimator created with output path: {estimator.output_path}")
 
     data_channels = {
-        'training': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/training',
-        'testing': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/evaluation',
+        'train': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/training',
+        'test': 's3://sagemaker-ap-south-1-954976316440/sagemaker/datasets/test_gen-00000-of-00001-3d4cd8309148a71f/evaluation',
         'model': 's3://sagemaker-ap-south-1-954976316440/sagemaker/models/mistral-7b-v0.3/model.tar.gz'
     }
 
@@ -90,7 +90,13 @@ try:
 
     logger.info("Starting training job...")
     
-    estimator.fit(inputs=data_channels, wait=True, logs=True)
+    job_name = f"mf-test-job-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    estimator.fit(
+        inputs=data_channels, 
+        wait=True, 
+        logs=True, 
+        job_name=job_name
+    )
     logger.info()
     
     job_name = estimator.latest_training_job.job_name

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import sys
 import subprocess
@@ -6,6 +8,7 @@ import tarfile
 from sagemaker_training import environment
 import shutil
 import logging
+import gzip
 
 # Configure logging
 logging.basicConfig(
@@ -17,13 +20,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger('training')
 
+logger.info("==== TRAIN.PY STARTED ====")
+logger.info("Current Directory:", os.getcwd())
+logger.info("Files in Current Directory:", os.listdir("."))
+logger.info("Environment Variables:")
+for k, v in os.environ.items():
+    logger.info(f"{k}: {v}")
+
+logger.info("Python Version:", sys.version)
+logger.info("Python Path:", sys.executable)
+
 def extract_model(model_path, extract_path):
     """Extract tar.gz model file"""
     logger.info(f"Extracting model from {model_path} to {extract_path}")
     try:
-        with tarfile.open(model_path, 'r:gz') as tar:
-            tar.extractall(path=extract_path)
+        # Add debug info about the file
+        logger.info(f"Model file size: {os.path.getsize(model_path)} bytes")
+        with open(model_path, 'rb') as f:
+            magic_bytes = f.read(4)
+        logger.info(f"File magic bytes: {magic_bytes!r}")
+
+        # Try different archive formats
+        try:
+            # Try gzip first
+            with tarfile.open(model_path, 'r:gz') as tar:
+                tar.extractall(path=extract_path)
+        except gzip.BadGzipFile:
+            logger.info("Not a gzip file, trying regular tar...")
+            # Try regular tar
+            with tarfile.open(model_path, 'r:') as tar:
+                tar.extractall(path=extract_path)
+        except Exception as e:
+            logger.info("Not a tar file, trying to copy directly...")
+            logger.info(f"Error: {e}")
+            shutil.copy2(model_path, os.path.join(extract_path, 'model.bin'))
+            return extract_path
         extracted_dirs = os.listdir(extract_path)
+        logger.info(f"Extracted contents: {extracted_dirs}")
         if len(extracted_dirs) == 1:
             final_path = os.path.join(extract_path, extracted_dirs[0])
             logger.info(f"Model extracted successfully to {final_path}")
@@ -32,6 +65,9 @@ def extract_model(model_path, extract_path):
         return extract_path
     except Exception as e:
         logger.error(f"Failed to extract model: {str(e)}", exc_info=True)
+        if os.path.exists(model_path):
+            logger.info(f"Contents of model directory {os.path.dirname(model_path)}:")
+            logger.info(os.listdir(os.path.dirname(model_path)))
         raise
 
 def setup_data_directory():
